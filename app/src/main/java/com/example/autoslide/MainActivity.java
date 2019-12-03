@@ -4,12 +4,14 @@ package com.example.autoslide;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 import org.opencv.android.JavaCameraView;
 
@@ -18,6 +20,15 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
     CameraBridgeViewBase cameraBridgeViewBase;
     BaseLoaderCallback baseLoaderCallback;
 
+
+    private static String Tag = "MainActicity";
+    static {
+        if (OpenCVLoader.initDebug()) {
+            Log.d(Tag, "sucess");
+        } else {
+            Log.d(Tag, "fail");
+        }
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
