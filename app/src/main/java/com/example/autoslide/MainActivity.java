@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -93,7 +94,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
             bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
             outputStream.flush();
             outputStream.close();
-
+//            Test
             openScreenshot(imageFile);
             return mPath;
         } catch (Throwable e) {
@@ -114,5 +115,18 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         Uri uri = Uri.fromFile(imageFile);
         intent.setDataAndType(uri, "image/*");
         startActivity(intent);
+    }
+
+    /**
+     * Another capture screen method for testing
+     * @param view root view to capture
+     * @return the screenshot
+     */
+    public Bitmap screenShot(View view) {
+        Bitmap bitmap = Bitmap.createBitmap(view.getWidth(),
+                view.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        view.draw(canvas);
+        return bitmap;
     }
 }
