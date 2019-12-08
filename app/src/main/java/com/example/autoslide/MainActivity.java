@@ -31,6 +31,9 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
 
     CameraBridgeViewBase cameraBridgeViewBase;
     BaseLoaderCallback baseLoaderCallback;
+    public static final String USER_AGENT = "Mozilla/5.0 (Linux; Android 4.1.1; Galaxy Nexus Build/JRO03C) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19";
+
+
 
 
     private static String Tag = "MainActicity";
@@ -60,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         myWebView.loadUrl("https://cs125.cs.illinois.edu/learn/");
         WebSettings webSettings = myWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
+        myWebView.getSettings().setUserAgentString(USER_AGENT);
 
         Button screenshot = findViewById(R.id.screenshotButton);
         screenshot.setOnClickListener(new View.OnClickListener() {
