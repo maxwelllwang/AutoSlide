@@ -5,4 +5,5 @@
       android:versionName="3.4.5">
 
 
+    <uses-permission android:name="android.permission.CAMERA" />
 </manifest>
