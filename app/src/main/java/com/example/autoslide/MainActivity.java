@@ -66,7 +66,8 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                takeScreenShot(1);
+                //takeScreenShot(1);
+                screenShot(myWebView);
 
             }
         });
@@ -227,4 +228,5 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         view.draw(canvas);
         return bitmap;
     }
+
 }
