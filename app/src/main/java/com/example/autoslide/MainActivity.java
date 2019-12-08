@@ -10,16 +10,20 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
+import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 import org.opencv.android.JavaCameraView;
+import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -43,19 +47,78 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        WebView myWebView = findViewById(R.id.webClient);
+        cameraBridgeViewBase = findViewById(R.id.javaCamera2View);
+        cameraBridgeViewBase.setVisibility(View.VISIBLE);
+        cameraBridgeViewBase.setCvCameraViewListener(this);
+
+
+
+
+        final WebView myWebView = findViewById(R.id.webClient);
         WebViewClient MyWebViewClient = new WebViewClient();
         myWebView.setWebViewClient(MyWebViewClient);
 
         myWebView.loadUrl("https://cs125.cs.illinois.edu/learn/");
         WebSettings webSettings = myWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
+
+        Button screenshot = findViewById(R.id.screenshotButton);
+        screenshot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                takeScreenShot(1);
+
+            }
+        });
+
+        Button forward = findViewById(R.id.rightArrow);
+        forward.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View view) {
+                myWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+            }
+        });
+
+        Button back = findViewById(R.id.leftArrow);
+        back.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View view) {
+                myWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
+            }
+        });
+
+        baseLoaderCallback = new BaseLoaderCallback(this) {
+            @Override
+            public void onManagerConnected(int status) {
+                super.onManagerConnected(status);
+
+                switch(status){
+
+                    case BaseLoaderCallback.SUCCESS:
+                        cameraBridgeViewBase.enableView();
+                        break;
+                    default:
+                        super.onManagerConnected(status);
+                        break;
+                }
+
+
+            }
+
+        };
+
+
     }
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        return null;
 
+        Mat frame = inputFrame.rgba();
+
+//        Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BayerBG2BGR);
+        return frame;
     }
 
     @Override
@@ -68,6 +131,39 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
 
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (!OpenCVLoader.initDebug()){
+            Toast.makeText(getApplicationContext(),"There's a problem, yo!", Toast.LENGTH_SHORT).show();
+        }
+
+        else
+        {
+            baseLoaderCallback.onManagerConnected(baseLoaderCallback.SUCCESS);
+        }
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(cameraBridgeViewBase!=null){
+
+            cameraBridgeViewBase.disableView();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (cameraBridgeViewBase!=null){
+            cameraBridgeViewBase.disableView();
+        }
+    }
+
+
     /**
      * Take a screen shot of the screen.
      * @param id the id of the picture to be taken
@@ -78,6 +174,8 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         try {
             // image naming and path  to include sd card  appending name you choose for file
             String mPath = Environment.getExternalStorageDirectory().toString() + "/" + id + ".jpg";
+            //System.out.println(mPath);
+
 
             // create bitmap screen capture
             View v1 = getWindow().getDecorView().getRootView();
@@ -88,7 +186,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
             v1.setDrawingCacheEnabled(false);
 
             File imageFile = new File(mPath);
-
+            Toast.makeText(MainActivity.this, mPath, Toast.LENGTH_SHORT).show();
             FileOutputStream outputStream = new FileOutputStream(imageFile);
             int quality = 100;
             bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
