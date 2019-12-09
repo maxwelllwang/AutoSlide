@@ -95,7 +95,9 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
                 //takeScreenShot(1);
                 screens.add(screenShot(myWebView));
 
-                Toast.makeText(MainActivity.this, screens.size(), Toast.LENGTH_SHORT).show();
+                System.out.println(screens.size());
+                System.out.println(screens.get(0));
+
                 if (screens.get(0) == null) {
                     System.out.println("error");
                 }
