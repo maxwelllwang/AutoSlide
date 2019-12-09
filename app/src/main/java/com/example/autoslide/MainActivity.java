@@ -25,6 +25,7 @@ import org.opencv.core.Mat;
 import org.opencv.android.JavaCameraView;
 import org.opencv.imgproc.Imgproc;
 
+
 import java.io.File;
 import java.io.FileOutputStream;
 
@@ -70,8 +71,8 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //takeScreenShot(1);
-                screenShot(myWebView);
+                takeScreenShot(1);
+               // screenShot(findViewById(R.id.parent));
 
             }
         });
@@ -183,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
 
 
             // create bitmap screen capture
-            View v1 = getWindow().getDecorView().getRootView();
+            View v1 = findViewById(R.id.webClient);
 //            For fragment view activate below line
 //            View v1 = getActivity().getWindow().getDecorView().getRootView();
             v1.setDrawingCacheEnabled(true);
