@@ -97,13 +97,11 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Bitmap b = Screenshot.takeScreenshotRoot(imageView);
+                Bitmap b = Screenshot.takeScreenshot(myWebView);
                 imageView.setImageBitmap(b);
 
-//                Toast.makeText(MainActivity.this, screens.size(), Toast.LENGTH_SHORT).show();
-                if (screens.get(0) == null) {
-                    System.out.println("error");
-                }
+
+
             }
         });
 
@@ -152,6 +150,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
         Mat frame = inputFrame.rgba();
+
 
 //        Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BayerBG2BGR);
         return frame;
