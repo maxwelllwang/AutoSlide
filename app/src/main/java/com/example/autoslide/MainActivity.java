@@ -144,6 +144,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
 
         Mat frame = inputFrame.rgba();
 
+
 //        Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BayerBG2BGR);
         return frame;
     }
