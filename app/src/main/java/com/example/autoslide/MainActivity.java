@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
     CameraBridgeViewBase cameraBridgeViewBase;
     BaseLoaderCallback baseLoaderCallback;
     public static final String USER_AGENT = "Mozilla/5.0 (Linux; Android 4.1.1; Galaxy Nexus Build/JRO03C) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19";
-    private static ArrayList<Bitmap> screens = new ArrayList<Bitmap>();
+    private static ArrayList<Bitmap> screens;
 
 
 
@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
 
 
 
-
+        screens = new ArrayList<Bitmap>();
         final WebView myWebView = findViewById(R.id.webClient);
         WebViewClient MyWebViewClient = new WebViewClient();
         myWebView.setWebViewClient(MyWebViewClient);
