@@ -97,19 +97,11 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Bitmap b = Screenshot.takeScreenshotRoot(imageView);
+                Bitmap b = Screenshot.takeScreenshot(myWebView);
                 imageView.setImageBitmap(b);
 
-<<<<<<< HEAD
-                System.out.println(screens.size());
-                System.out.println(screens.get(0));
 
-=======
-//                Toast.makeText(MainActivity.this, screens.size(), Toast.LENGTH_SHORT).show();
->>>>>>> f16416d273ec878849eea5a65f5caf7fc2d84988
-                if (screens.get(0) == null) {
-                    System.out.println("error");
-                }
+
             }
         });
 
