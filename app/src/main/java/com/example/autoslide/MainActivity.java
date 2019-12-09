@@ -231,7 +231,8 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
         Picture picture = view.capturePicture();
         Canvas canvas = new Canvas(bitmap);
-        picture.draw(canvas);
+//        view.draw(canvas);
+        canvas.drawPicture(picture);
         FileOutputStream fos = null;
         return bitmap;
     }
