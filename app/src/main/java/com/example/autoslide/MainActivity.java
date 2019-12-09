@@ -102,6 +102,8 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
                 Mat mat = new Mat();
                 Utils.bitmapToMat(bmp32, mat);
                 screens.add(mat);
+
+
             }
         });
 
@@ -199,70 +201,15 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
     }
 
 
-    /**
-     * Take a screen shot of the screen.
-     * @param id the id of the picture to be taken
-     * @return the URL of the photo
-     */
-    private String takeScreenShot(int id) {
+    private int topMatch(Mat currentImage) {
+        int max = 0;
+        int maxIndex = -1;
 
-        try {
-            // image naming and path  to include sd card  appending name you choose for file
-            String mPath = Environment.getExternalStorageDirectory().toString() + "/" + id + ".jpg";
-            //System.out.println(mPath);
-
-
-            // create bitmap screen capture
-            View v1 = findViewById(R.id.webClient);
-//            For fragment view activate below line
-//            View v1 = getActivity().getWindow().getDecorView().getRootView();
-            v1.setDrawingCacheEnabled(true);
-            Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
-            v1.setDrawingCacheEnabled(false);
-
-            File imageFile = new File(mPath);
-            //Toast.makeText(MainActivity.this, mPath, Toast.LENGTH_SHORT).show();
-            FileOutputStream outputStream = new FileOutputStream(imageFile);
-            int quality = 100;
-            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
-            outputStream.flush();
-            outputStream.close();
-//            Test
-            openScreenshot(imageFile);
-            return mPath;
-        } catch (Throwable e) {
-            // Several error may come out with file handling or DOM
-            e.printStackTrace();
+        for (int i = 0; i < screens.size(); i++) {
+            if ()
         }
-
-        return null;
     }
 
-    /**
-     * Opening a screen capture
-     * @param imageFile
-     */
-    private void openScreenshot(File imageFile) {
-        Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_VIEW);
-        Uri uri = Uri.fromFile(imageFile);
-        intent.setDataAndType(uri, "image/*");
-        startActivity(intent);
-    }
 
-    /**
-     * Another capture screen method for testing
-     * @param view root view to capture
-     * @return the screenshot
-     */
-    public Bitmap screenShot(WebView view) {
-        Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
-        Picture picture = view.capturePicture();
-        Canvas canvas = new Canvas(bitmap);
-//        view.draw(canvas);
-        canvas.drawPicture(picture);
-        FileOutputStream fos = null;
-        return bitmap;
-    }
 
 }
