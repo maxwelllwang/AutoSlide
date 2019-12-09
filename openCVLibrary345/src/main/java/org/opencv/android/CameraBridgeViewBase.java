@@ -508,8 +508,10 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
         float hw = this.getWidth() / 2.0f;
         float hh = this.getHeight() / 2.0f;
 
-        float cw  = (float)Resources.getSystem().getDisplayMetrics().widthPixels; //Make sure to import Resources package
+        float cw  = (float)Resources.getSystem().getDisplayMetrics().widthPixels;
+        System.out.println(cw);
         float ch  = (float) Resources.getSystem().getDisplayMetrics().heightPixels;
+        System.out.println(ch);
 
         float scale = cw / (float)mh;
         float scale2 = ch / (float)mw;

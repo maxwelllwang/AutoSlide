@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Picture;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -71,8 +72,8 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                takeScreenShot(1);
-               // screenShot(findViewById(R.id.parent));
+                //takeScreenShot(1);
+                screenShot(myWebView);
 
             }
         });
@@ -192,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
             v1.setDrawingCacheEnabled(false);
 
             File imageFile = new File(mPath);
-            Toast.makeText(MainActivity.this, mPath, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(MainActivity.this, mPath, Toast.LENGTH_SHORT).show();
             FileOutputStream outputStream = new FileOutputStream(imageFile);
             int quality = 100;
             bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
@@ -226,11 +227,12 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
      * @param view root view to capture
      * @return the screenshot
      */
-    public Bitmap screenShot(View view) {
-        Bitmap bitmap = Bitmap.createBitmap(view.getWidth(),
-                view.getHeight(), Bitmap.Config.ARGB_8888);
+    public Bitmap screenShot(WebView view) {
+        Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
+        Picture picture = view.capturePicture();
         Canvas canvas = new Canvas(bitmap);
-        view.draw(canvas);
+        picture.draw(canvas);
+        FileOutputStream fos = null;
         return bitmap;
     }
 
