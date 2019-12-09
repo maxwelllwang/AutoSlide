@@ -20,6 +20,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import org.opencv.android.Utils;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.OpenCVLoader;
@@ -56,8 +57,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
     CameraBridgeViewBase cameraBridgeViewBase;
     BaseLoaderCallback baseLoaderCallback;
     public static final String USER_AGENT = "Mozilla/5.0 (Linux; Android 4.1.1; Galaxy Nexus Build/JRO03C) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19";
-    private static ArrayList<Bitmap> screens;
-    private View main;
+    private static ArrayList<Mat> screens;
     private ImageView imageView;
 
 
@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
 
 
 
-        screens = new ArrayList<Bitmap>();
+        screens = new ArrayList<Mat>();
         final WebView myWebView = findViewById(R.id.webClient);
         WebViewClient MyWebViewClient = new WebViewClient();
         myWebView.setWebViewClient(MyWebViewClient);
@@ -92,16 +92,16 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         myWebView.getSettings().setUserAgentString(USER_AGENT);
 
         Button screenshot = findViewById(R.id.screenshotButton);
-        main = findViewById(R.id.webClient);
         imageView = (ImageView) findViewById(R.id.imageView);
         screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Bitmap b = Screenshot.takeScreenshot(myWebView);
                 imageView.setImageBitmap(b);
-
-
-
+                Bitmap bmp32 = b.copy(Bitmap.Config.ARGB_8888, true);
+                Mat mat = new Mat();
+                Utils.bitmapToMat(bmp32, mat);
+                screens.add(mat);
             }
         });
 
