@@ -17,6 +17,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -56,6 +57,8 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
     BaseLoaderCallback baseLoaderCallback;
     public static final String USER_AGENT = "Mozilla/5.0 (Linux; Android 4.1.1; Galaxy Nexus Build/JRO03C) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19";
     private static ArrayList<Bitmap> screens;
+    private View main;
+    private ImageView imageView;
 
 
 
@@ -89,15 +92,21 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         myWebView.getSettings().setUserAgentString(USER_AGENT);
 
         Button screenshot = findViewById(R.id.screenshotButton);
+        main = findViewById(R.id.webClient);
+        imageView = (ImageView) findViewById(R.id.imageView);
         screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //takeScreenShot(1);
-                screens.add(screenShot(myWebView));
+                Bitmap b = Screenshot.takeScreenshotRoot(imageView);
+                imageView.setImageBitmap(b);
 
+<<<<<<< HEAD
                 System.out.println(screens.size());
                 System.out.println(screens.get(0));
 
+=======
+//                Toast.makeText(MainActivity.this, screens.size(), Toast.LENGTH_SHORT).show();
+>>>>>>> f16416d273ec878849eea5a65f5caf7fc2d84988
                 if (screens.get(0) == null) {
                     System.out.println("error");
                 }
