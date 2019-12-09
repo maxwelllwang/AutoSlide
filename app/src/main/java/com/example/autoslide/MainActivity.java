@@ -206,8 +206,14 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         int maxIndex = -1;
 
         for (int i = 0; i < screens.size(); i++) {
-            if ()
+            int currentMatch = matches(screens.get(i), currentImage);
+            if (currentMatch > max) {
+                max = currentMatch;
+                maxIndex = i;
+            }
         }
+
+        return maxIndex;
     }
 
 
