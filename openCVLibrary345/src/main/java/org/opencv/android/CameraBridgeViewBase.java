@@ -22,6 +22,8 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+
+
 /**
  * This is a basic class, implementing the interaction with Camera and OpenCV library.
  * The main responsibility of it - is to control when camera can be enabled, process the frame,
@@ -59,6 +61,8 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
     public static final int GRAY = 2;
 
     private final Matrix mMatrix = new Matrix();
+
+
 
 
     public CameraBridgeViewBase(Context context, int cameraId) {
@@ -508,10 +512,12 @@ public abstract class CameraBridgeViewBase extends SurfaceView implements Surfac
         float hw = this.getWidth() / 2.0f;
         float hh = this.getHeight() / 2.0f;
 
-        float cw  = (float)Resources.getSystem().getDisplayMetrics().widthPixels;
-        System.out.println(cw);
-        float ch  = (float) Resources.getSystem().getDisplayMetrics().heightPixels;
-        System.out.println(ch);
+        float cw  = (float) (Resources.getSystem().getDisplayMetrics().widthPixels / 4);
+
+        float ch  = (float) (Resources.getSystem().getDisplayMetrics().heightPixels / 9);
+
+
+
 
         float scale = cw / (float)mh;
         float scale2 = ch / (float)mw;
