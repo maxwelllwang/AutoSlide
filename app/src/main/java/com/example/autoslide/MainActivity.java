@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
     private View main;
     private ImageView imageView;
 
-
+    private Mat tempImage;
 
     private static String Tag = "MainActicity";
     static {
@@ -151,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
 
         Mat frame = inputFrame.rgba();
 
-
+        tempImage = frame;
 //        Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BayerBG2BGR);
         return frame;
     }
@@ -263,6 +263,49 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         canvas.drawPicture(picture);
         FileOutputStream fos = null;
         return bitmap;
+    }
+
+    public int matches(Mat img1, Mat img2) {
+
+//        img1 = Imgcodecs.imread(filename1, Imgcodecs.IMREAD_GRAYSCALE);
+//        img2 = Imgcodecs.imread(filename2, Imgcodecs.IMREAD_GRAYSCALE);
+//        if (img1.empty() || img2.empty()) {
+//            System.err.println("Cannot read images!");
+//            System.exit(0);
+//        }
+        //-- Step 1: Detect the keypoints using SURF Detector, compute the descriptors
+
+
+        double hessianThreshold = 400;
+        int nOctaves = 4, nOctaveLayers = 3;
+        boolean extended = false, upright = false;
+        SURF detector = SURF.create(hessianThreshold, nOctaves, nOctaveLayers, extended, upright);
+        MatOfKeyPoint keypoints1 = new MatOfKeyPoint(), keypoints2 = new MatOfKeyPoint();
+        Mat descriptors1 = new Mat(), descriptors2 = new Mat();
+        detector.detectAndCompute(img1, new Mat(), keypoints1, descriptors1);
+        detector.detectAndCompute(img2, new Mat(), keypoints2, descriptors2);
+        //-- Step 2: Matching descriptor vectors with a FLANN based matcher
+        // Since SURF is a floating-point descriptor NORM_L2 is used
+        DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
+        List<MatOfDMatch> knnMatches = new ArrayList<>();
+        matcher.knnMatch(descriptors1, descriptors2, knnMatches, 2);
+        //-- Filter matches using the Lowe's ratio test
+        float ratioThresh = 0.7f;
+        List<DMatch> listOfGoodMatches = new ArrayList<>();
+        for (int i = 0; i < knnMatches.size(); i++) {
+            if (knnMatches.get(i).rows() > 1) {
+                DMatch[] matches = knnMatches.get(i).toArray();
+                if (matches[0].distance < ratioThresh * matches[1].distance) {
+                    listOfGoodMatches.add(matches[0]);
+                }
+            }
+        }
+        MatOfDMatch goodMatches = new MatOfDMatch();
+        goodMatches.fromList(listOfGoodMatches);
+
+
+        return listOfGoodMatches.size();
+
     }
 
 }
