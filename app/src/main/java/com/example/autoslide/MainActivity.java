@@ -75,6 +75,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private boolean takeShot = false;
 
+    private int[] matchNums = new int[200];
+    private int currentSlide = 0;
+
     private int matches = 0;
 
     private int counter = 0;
@@ -294,6 +297,36 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
     }
 
+    private void getMatchNums(WebView view) {
+        //int cmn = 0;
+        for (int i = 0; i < matchNums.length; i++) {
+            int[] toBeAveraged = new int[5];
+            int count = 0;
+            long start = java.lang.System.currentTimeMillis();
+
+            while (count != 5) {
+                if((java.lang.System.currentTimeMillis() - start) % 500 == 0) {//need something here to know when to add number in array
+                    toBeAveraged[count] = matches;
+                    count++;
+                }
+            }
+            int average = 0;
+            for (int num : toBeAveraged) {
+                average += num;
+            }
+            average /= 5;
+
+            matchNums[i] = average;
+
+            view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+        }
+
+
+    }
+
+
+
+
     private Bitmap getScreens(WebView view) {
         int i = 0;
         Bitmap previous = null;
@@ -338,6 +371,35 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         } else {
             return false;
         }
+    }
+
+    private int topMatch() {
+        int max = 0;
+        int maxIndex = -1;
+
+        for (int i = 0; i < matchNums.length; i++) {
+            if (matchNums[i] > 0) {
+                maxIndex = i;
+                max = matchNums[i];
+
+            }
+        }
+        return maxIndex;
+    }
+
+    private void goToSlide(View v, int to) {
+        if (to > currentSlide) {
+            int moves = to - currentSlide;
+            for (int i = 0; i < moves; i++) {
+                v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+            }
+        }
+
+        int moves = currentSlide - to;
+        for (int i = 0; i < moves; i++) {
+            v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
+        }
+
     }
 
 //    private int topMatch(Mat currentImage) {
