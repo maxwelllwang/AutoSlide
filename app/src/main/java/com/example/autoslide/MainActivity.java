@@ -17,7 +17,9 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import org.opencv.android.JavaCamera2View;
@@ -34,6 +36,7 @@ import org.opencv.features2d.ORB;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.opencv.calib3d.Calib3d;
@@ -104,15 +107,29 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         myWebView.getSettings().setUserAgentString(USER_AGENT);
 
 
-
+        imageView = (ImageView) findViewById(R.id.imageView);
         Button startAnalysis = findViewById(R.id.startAnalysis);
         startAnalysis.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
-                JavaCamera2View camera = findViewById(R.id.javaCamera2View);
+                LinearLayout cameraLayout = (LinearLayout) findViewById(R.id.cameraNest);
+
+                View cameraNest = cameraLayout;
+
+                JavaCamera2View cameraDisplay = findViewById(R.id.javaCamera2View);
+
+
+                //Bitmap cameraScreenshot = Bitmap.createBitmap(cameraDisplay);
+
+                //View v1 = getWindow().getDecorView();
                 Bitmap b = Screenshot.takeScreenshot(myWebView);
-                Bitmap a = Screenshot.takeScreenshot(camera);
+                //Bitmap a = Screenshot.takeScreenshot(cameraNest);
+
+
+                Bitmap a = loadBitmapFromView(cameraLayout);
+                imageView.setImageBitmap(a);
+                //cameraLayout.setVisibility(View.GONE);
 
                 Bitmap amp32 = a.copy(Bitmap.Config.ARGB_8888, true);
                 Bitmap bmp32 = b.copy(Bitmap.Config.ARGB_8888, true);
@@ -134,16 +151,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 } else {
 
 
-                    Mat hsvMat = new Mat();
-                    Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_RGB2HSV);
-                    
-                    Mat hsvTempImage = new Mat();
-                    Imgproc.cvtColor(cameraMat, hsvTempImage, Imgproc.COLOR_RGB2HSV);
-
-
-                    int matchNum = matches(hsvMat, hsvTempImage);
-
-                    Toast.makeText(getApplicationContext(), "Number of Matches: " + matchNum, Toast.LENGTH_SHORT).show();
+//                    Mat hsvMat = new Mat();
+//                    Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_RGB2HSV);
+//
+//                    Mat hsvTempImage = new Mat();
+//                    Imgproc.cvtColor(cameraMat, hsvTempImage, Imgproc.COLOR_RGB2HSV);
+//
+//
+//                    int matchNum = matches(hsvMat, hsvTempImage);
+//
+//                    Toast.makeText(getApplicationContext(), "Number of Matches: " + matchNum, Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -153,11 +170,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                takeShot = true;
 
-                if (tempImage != null && !tempImage.empty()) {
-                    //Toast.makeText(getApplicationContext(), "picture sucess", Toast.LENGTH_SHORT).show();
-                }
+              System.out.println();
+              imageView.setImageBitmap(getScreens(myWebView));
             }
         });
 
@@ -202,18 +217,19 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     }
 
+    public static Bitmap loadBitmapFromView(View v) {
+        Bitmap b = Bitmap.createBitmap(v.getLayoutParams().width, v.getLayoutParams().height, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(b);
+        v.layout(v.getLeft(), v.getTop(), v.getRight(), v.getBottom());
+        v.draw(c);
+        return b;
+    }
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
         Mat frame = inputFrame.rgba();
         Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGB2BGR);
-        if (takeShot) {
-            tempImage = frame;
-            Toast.makeText(getApplicationContext(), "picture taken", Toast.LENGTH_SHORT).show();
-            takeShot = false;
-        }
-
 
         return frame;
     }
@@ -257,75 +273,66 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
     }
 
+    private Bitmap getScreens(WebView view) {
+        int i = 0;
+        Bitmap previous = null;
+        Bitmap b = null;
+        int matchNum = 0;
+        //boolean same;
+        do {
+            b = Screenshot.takeScreenshot(view);
+            System.out.println(previous);
+            System.out.println(b);
+            if (b.sameAs(previous)) {
+                System.out.print("same ");
+                System.out.println(i);
+                break;
+            }
+            //imageView.setImageBitmap(b);
+            Mat mat = new Mat();
+            Utils.bitmapToMat(b.copy(Bitmap.Config.ARGB_8888, true), mat);
+            screens.add(mat);
+            view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+            i++;
+            previous = Bitmap.createBitmap(b);
+            System.out.println(screens.size());
+        } while (true);
 
-    /**
-     * Take a screen shot of the screen.
-     *
-     * @param id the id of the picture to be taken
-     * @return the URL of the photo
-     */
-    private String takeScreenShot(int id) {
+        return b;
 
-        try {
-            // image naming and path  to include sd card  appending name you choose for file
-            String mPath = Environment.getExternalStorageDirectory().toString() + "/" + id + ".jpg";
-            //System.out.println(mPath);
+    }
 
 
-            // create bitmap screen capture
-            View v1 = findViewById(R.id.webClient);
-//            For fragment view activate below line
-//            View v1 = getActivity().getWindow().getDecorView().getRootView();
-            v1.setDrawingCacheEnabled(true);
-            Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
-            v1.setDrawingCacheEnabled(false);
-
-            File imageFile = new File(mPath);
-            //Toast.makeText(MainActivity.this, mPath, Toast.LENGTH_SHORT).show();
-            FileOutputStream outputStream = new FileOutputStream(imageFile);
-            int quality = 100;
-            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
-            outputStream.flush();
-            outputStream.close();
-//            Test
-            openScreenshot(imageFile);
-            return mPath;
-        } catch (Throwable e) {
-            // Several error may come out with file handling or DOM
-            e.printStackTrace();
+    private static boolean compare(Bitmap b1, Bitmap b2) {
+        if (b1.getWidth() == b2.getWidth() && b1.getHeight() == b2.getHeight()) {
+            int[] pixels1 = new int[b1.getWidth() * b1.getHeight()];
+            int[] pixels2 = new int[b2.getWidth() * b2.getHeight()];
+            b1.getPixels(pixels1, 0, b1.getWidth(), 0, 0, b1.getWidth(), b1.getHeight());
+            b2.getPixels(pixels2, 0, b2.getWidth(), 0, 0, b2.getWidth(), b2.getHeight());
+            if (Arrays.equals(pixels1, pixels2)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
         }
-
-        return null;
     }
 
-    /**
-     * Opening a screen capture
-     *
-     * @param imageFile
-     */
-    private void openScreenshot(File imageFile) {
-        Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_VIEW);
-        Uri uri = Uri.fromFile(imageFile);
-        intent.setDataAndType(uri, "image/*");
-        startActivity(intent);
+    private int topMatch(Mat currentImage) {
+        int max = 0;
+        int maxIndex = -1;
+
+        for (int i = 0; i < screens.size(); i++) {
+            int currentMatch = matches(screens.get(i), currentImage);
+            if (currentMatch > max) {
+                max = currentMatch;
+                maxIndex = -1;
+            }
+        }
+        return maxIndex;
     }
 
-    /**
-     * Another capture screen method for testing
-     *
-     * @param view root view to capture
-     * @return the screenshot
-     */
-    public Bitmap screenShot(WebView view) {
-        Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
-        Picture picture = view.capturePicture();
-        Canvas canvas = new Canvas(bitmap);
-//        view.draw(canvas);
-        canvas.drawPicture(picture);
-        FileOutputStream fos = null;
-        return bitmap;
-    }
 
     public int matches(Mat img1, Mat img2) {
 
