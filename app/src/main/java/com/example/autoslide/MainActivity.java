@@ -88,7 +88,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private TextView matchesDisplay;
 
-
+    FeatureDetector detector;
+    DescriptorExtractor descriptor;
+    DescriptorMatcher matcher;
+    Mat descriptors2,descriptors1;
+    Mat img1;
+    MatOfKeyPoint keypoints1,keypoints2;
 
     static {
         if (OpenCVLoader.initDebug()) {
@@ -124,13 +129,18 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         myWebView.getSettings().setUserAgentString(USER_AGENT);
 
 
-
         imageView = (ImageView) findViewById(R.id.imageView);
         Button startAnalysis = findViewById(R.id.startAnalysis);
         startAnalysis.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
+
+                if (takeShot) {
+                    takeShot = false;
+                } else {
+                    takeShot = true;
+                }
 //                LinearLayout cameraLayout = (LinearLayout) findViewById(R.id.cameraNest);
 //
 //                View cameraNest = cameraLayout;
@@ -237,7 +247,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     }
 
 
-
     public static Bitmap loadBitmapFromView(View v) {
         Bitmap b = Bitmap.createBitmap(v.getLayoutParams().width, v.getLayoutParams().height, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
@@ -251,10 +260,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
         Mat frame = inputFrame.rgba();
-        Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGB2BGR);
 
-        matches = matches(frame);
-        System.out.print(" Number of matches" + matches);
+        if (takeShot) {
+            Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGB2BGR);
+
+            matches(frame);
+            System.out.print(" Number of matches" + matches);
+        }
+
+
+
         return frame;
     }
 
@@ -417,7 +432,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 //    }
 
 
-    public int matches(Mat img1) {
+    public void matches(Mat img1) {
 
         System.out.println("algoritm started");
 
@@ -427,89 +442,88 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Mat img2 = new Mat();
         Utils.bitmapToMat(bmp32, img2);
 
-        Mat hsvMat = new Mat();
-        Imgproc.cvtColor(img1, hsvMat, Imgproc.COLOR_RGB2HSV);
+        System.out.println("algoritm rarted");
+//        Mat hsvMat = new Mat();
+//        Imgproc.cvtColor(img1, hsvMat, Imgproc.COLOR_RGB2HSV);
+//
+//        Mat hsvTempImage = new Mat();
+//        Imgproc.cvtColor(img2, hsvTempImage, Imgproc.COLOR_RGB2HSV);
+//
+//        img1 = hsvMat;
+//        img2 = hsvTempImage;
 
-        Mat hsvTempImage = new Mat();
-        Imgproc.cvtColor(img2, hsvTempImage, Imgproc.COLOR_RGB2HSV);
+        double hessianThreshold = 400;
+        int nOctaves = 4, nOctaveLayers = 3;
+        boolean extended = false, upright = false;
+        System.out.println("1");
+        SURF detector = SURF.create(hessianThreshold, nOctaves, nOctaveLayers, extended, upright);
+        MatOfKeyPoint keypoints1 = new MatOfKeyPoint(), keypoints2 = new MatOfKeyPoint();
+        Mat descriptors1 = new Mat(), descriptors2 = new Mat();
 
-        img1 = hsvMat;
-        img2 = hsvTempImage;
-        if (img2 == null || img2.empty()) {
-            System.out.println("screenshot null");
-//            Toast.makeText(getApplicationContext(), "Screenshot is null", Toast.LENGTH_SHORT).show();
+        System.out.println("2");
+        detector.detectAndCompute(img1, new Mat(), keypoints1, descriptors1);
+        detector.detectAndCompute(img2, new Mat(), keypoints2, descriptors2);
+        System.out.println("3");
+        //-- Step 2: Matching descriptor vectors with a FLANN based matcher
+        // Since SURF is a floating-point descriptor NORM_L2 is used
+        DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
+        System.out.println("4");
 
-        } else if (img1 == null || img1.empty()) {
-            System.out.println("camera null");
-//            Toast.makeText(getApplicationContext(), "camera is null", Toast.LENGTH_SHORT).show();
-
-        } else {
-            double hessianThreshold = 400;
-            int nOctaves = 4, nOctaveLayers = 3;
-            boolean extended = false, upright = false;
-            SURF detector = SURF.create(hessianThreshold, nOctaves, nOctaveLayers, extended, upright);
-            MatOfKeyPoint keypoints1 = new MatOfKeyPoint(), keypoints2 = new MatOfKeyPoint();
-            Mat descriptors1 = new Mat(), descriptors2 = new Mat();
-
-
-            detector.detectAndCompute(img1, new Mat(), keypoints1, descriptors1);
-            detector.detectAndCompute(img2, new Mat(), keypoints2, descriptors2);
-            //-- Step 2: Matching descriptor vectors with a FLANN based matcher
-            // Since SURF is a floating-point descriptor NORM_L2 is used
-            DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
-            List<MatOfDMatch> knnMatches = new ArrayList<>();
-            matcher.knnMatch(descriptors1, descriptors2, knnMatches, 2);
-            //-- Filter matches using the Lowe's ratio test
-            float ratioThresh = 0.7f;
-            List<DMatch> listOfGoodMatches = new ArrayList<>();
-            for (int i = 0; i < knnMatches.size(); i++) {
-                if (knnMatches.get(i).rows() > 1) {
-                    DMatch[] matches = knnMatches.get(i).toArray();
-                    if (matches[0].distance < ratioThresh * matches[1].distance) {
-                        listOfGoodMatches.add(matches[0]);
-                    }
+        List<MatOfDMatch> knnMatches = new ArrayList<>();
+        matcher.knnMatch(descriptors1, descriptors2, knnMatches, 2);
+        //-- Filter matches using the Lowe's ratio test
+        float ratioThresh = 0.7f;
+        int goodMatch = 0;
+        //List<DMatch> listOfGoodMatches = new ArrayList<>();
+        for (int i = 0; i < knnMatches.size(); i++) {
+            if (knnMatches.get(i).rows() > 1) {
+                DMatch[] matches = knnMatches.get(i).toArray();
+                if (matches[0].distance < ratioThresh * matches[1].distance) {
+                    //listOfGoodMatches.add(matches[0]);
+                    goodMatch++;
                 }
             }
-            MatOfDMatch goodMatches = new MatOfDMatch();
-            goodMatches.fromList(listOfGoodMatches);
-
-            int matches = listOfGoodMatches.size();
-            System.out.println("number of mat: " + matches);
-//            Toast.makeText(getApplicationContext(), "camera is null", Toast.LENGTH_SHORT).show();
-            return matches;
         }
+        System.out.println("5");
+        //MatOfDMatch goodMatches = new MatOfDMatch();
+        //goodMatches.fromList(listOfGoodMatches);
 
-        return counter;
+
+        matches = goodMatch;
+        System.out.println("number of mat: " + goodMatch);
+//            Toast.makeText(getApplicationContext(), "camera is null", Toast.LENGTH_SHORT).show();
+
+
+
+
+
+
     }
 
 
-
-/**
- * ORB orb = ORB.create();
- *
- *         Mat descriptors1 = new Mat();
- *         MatOfKeyPoint keypoints1 = new MatOfKeyPoint();
- *         Mat mask1 = new Mat();
- *         orb.detectAndCompute(img1, mask1, keypoints1, descriptors1);
- *
- *         Mat descriptors2 = new Mat();
- *         MatOfKeyPoint keypoints2 = new MatOfKeyPoint();
- *         Mat mask2 = new Mat();
- *         orb.detectAndCompute(img2, mask2, keypoints2, descriptors2);
- *
- *         BFMatcher bf = BFMatcher.create();
- *         MatOfDMatch potMatch = new MatOfDMatch();
- *         List matches = new ArrayList();
- *         bf.match(descriptors1, descriptors2, potMatch);
- *
- *         matches = potMatch.toList();
- *
- *
- *         return matches.size();
- */
-
-
-
+    /**
+     * ORB orb = ORB.create();
+     * <p>
+     * Mat descriptors1 = new Mat();
+     * MatOfKeyPoint keypoints1 = new MatOfKeyPoint();
+     * Mat mask1 = new Mat();
+     * orb.detectAndCompute(img1, mask1, keypoints1, descriptors1);
+     * <p>
+     * Mat descriptors2 = new Mat();
+     * MatOfKeyPoint keypoints2 = new MatOfKeyPoint();
+     * Mat mask2 = new Mat();
+     * orb.detectAndCompute(img2, mask2, keypoints2, descriptors2);
+     * <p>
+     * BFMatcher bf = BFMatcher.create();
+     * MatOfDMatch potMatch = new MatOfDMatch();
+     * List matches = new ArrayList();
+     * bf.match(descriptors1, descriptors2, potMatch);
+     * <p>
+     * matches = potMatch.toList();
+     * <p>
+     * <p>
+     * return matches.size();
+     */
 
 
     static MatOfDMatch filterMatchesByDistance(MatOfDMatch matches) {
