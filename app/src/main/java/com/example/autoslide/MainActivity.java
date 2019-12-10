@@ -20,6 +20,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import org.opencv.android.JavaCamera2View;
 import org.opencv.android.Utils;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -68,6 +69,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private Mat tempImage;
     private Mat tempScreenshot;
 
+    private boolean takeShot = false;
+
     private int counter = 0;
 
     private static String Tag = "MainActicity";
@@ -100,21 +103,31 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         webSettings.setJavaScriptEnabled(true);
         myWebView.getSettings().setUserAgentString(USER_AGENT);
 
-        Button screenshot = findViewById(R.id.screenshotButton);
 
-        screenshot.setOnClickListener(new View.OnClickListener() {
+
+        Button startAnalysis = findViewById(R.id.startAnalysis);
+        startAnalysis.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+                JavaCamera2View camera = findViewById(R.id.javaCamera2View);
                 Bitmap b = Screenshot.takeScreenshot(myWebView);
-                //imageView.setImageBitmap(b);
+                Bitmap a = Screenshot.takeScreenshot(camera);
+
+                Bitmap amp32 = a.copy(Bitmap.Config.ARGB_8888, true);
                 Bitmap bmp32 = b.copy(Bitmap.Config.ARGB_8888, true);
+
                 Mat mat = new Mat();
+                Mat cameraMat = new Mat();
+
                 Utils.bitmapToMat(bmp32, mat);
+                Utils.bitmapToMat(amp32, cameraMat);
+
                 screens.add(mat);
 
                 if (mat == null || mat.empty()) {
                     Toast.makeText(getApplicationContext(), "Screenshot is null", Toast.LENGTH_SHORT).show();
-                } else if (tempImage == null || tempImage.empty()) {
+                } else if (cameraMat == null || cameraMat.empty()) {
 
                     Toast.makeText(getApplicationContext(), "camera is null", Toast.LENGTH_SHORT).show();
 
@@ -123,17 +136,28 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
                     Mat hsvMat = new Mat();
                     Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_RGB2HSV);
+                    
                     Mat hsvTempImage = new Mat();
-                    Imgproc.cvtColor(tempImage, hsvTempImage, Imgproc.COLOR_RGB2HSV);
-
-
+                    Imgproc.cvtColor(cameraMat, hsvTempImage, Imgproc.COLOR_RGB2HSV);
 
 
                     int matchNum = matches(hsvMat, hsvTempImage);
 
                     Toast.makeText(getApplicationContext(), "Number of Matches: " + matchNum, Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
 
+
+        Button screenshot = findViewById(R.id.screenshotButton);
+        screenshot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                takeShot = true;
+
+                if (tempImage != null && !tempImage.empty()) {
+                    //Toast.makeText(getApplicationContext(), "picture sucess", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -183,10 +207,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
         Mat frame = inputFrame.rgba();
+        Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGB2BGR);
+        if (takeShot) {
+            tempImage = frame;
+            Toast.makeText(getApplicationContext(), "picture taken", Toast.LENGTH_SHORT).show();
+            takeShot = false;
+        }
 
-
-
-        tempImage = frame;
 
         return frame;
     }
