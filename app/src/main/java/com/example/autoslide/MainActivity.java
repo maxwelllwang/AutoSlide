@@ -28,6 +28,7 @@ import org.opencv.core.Mat;
 import org.opencv.android.JavaCameraView;
 import org.opencv.imgproc.Imgproc;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
@@ -58,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
     BaseLoaderCallback baseLoaderCallback;
     public static final String USER_AGENT = "Mozilla/5.0 (Linux; Android 4.1.1; Galaxy Nexus Build/JRO03C) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19";
     private static ArrayList<Mat> screens;
+    private static ArrayList<Bitmap> screenBits;
     private ImageView imageView;
 
     private Mat tempImage;
@@ -97,6 +99,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
             @Override
             public void onClick(View view) {
                 getScreens(myWebView);
+                //imageView.setImageBitmap(getScreens(myWebView));
 
 
             }
@@ -195,31 +198,54 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         }
     }
 
-    private void getScreens(WebView view) {
+    private Bitmap getScreens(WebView view) {
         int i = 0;
+        Bitmap previous = null;
+        //boolean same;
         do {
             Bitmap b = Screenshot.takeScreenshot(view);
+            System.out.println(previous);
+            System.out.println(b);
+            if (compare(b, previous)) {
+                System.out.print("same ");
+                System.out.println(i);
+                break;
+            }
             //imageView.setImageBitmap(b);
             Mat mat = new Mat();
             Utils.bitmapToMat(b.copy(Bitmap.Config.ARGB_8888, true), mat);
             screens.add(mat);
             view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
             i++;
+            previous = Bitmap.createBitmap(b);
+            System.out.println(screens.size());
+        } while(true);
 
-        } while(i <= 4);
-        System.out.println(screens.size());
-
+        return previous;
 
     }
 
-    private boolean compare(Mat a, Mat b) {
-        Mat mat = new Mat();
-        Core.compare(a, b, mat, Core.CMP_EQ);
-        if (Core.countNonZero(mat) < 1) {
-            return true;
-        }
-        return false;
+//    public static boolean matEquals(Mat img1, Mat img2){
+//        Mat out = new Mat();
+//        //Core.compare(img1, img2, out, Core.CMP_NE);
+//        Core.subtract(img1, img2, out);
+//        return Core.countNonZero(out) == 0;
+//    }
 
+    private static boolean compare(Bitmap b1, Bitmap b2) {
+        if (b1.getWidth() == b2.getWidth() && b1.getHeight() == b2.getHeight()) {
+            int[] pixels1 = new int[b1.getWidth() * b1.getHeight()];
+            int[] pixels2 = new int[b2.getWidth() * b2.getHeight()];
+            b1.getPixels(pixels1, 0, b1.getWidth(), 0, 0, b1.getWidth(), b1.getHeight());
+            b2.getPixels(pixels2, 0, b2.getWidth(), 0, 0, b2.getWidth(), b2.getHeight());
+            if (Arrays.equals(pixels1, pixels2)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 
     private int topMatch(Mat currentImage) {
