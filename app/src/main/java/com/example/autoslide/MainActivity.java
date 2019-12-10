@@ -206,7 +206,8 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
             view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
             i++;
 
-        } while(i <= 2 || compare(screens.get(i-1), screens.get(i-2)));
+        } while(i <= 4);
+        System.out.println(screens.size());
 
 
     }
