@@ -20,6 +20,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.opencv.android.JavaCamera2View;
@@ -69,16 +70,22 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private static ArrayList<Mat> screens;
     private ImageView imageView;
 
-    private static int[] matchNums = new int[200];
     private Mat tempImage;
     private Mat tempScreenshot;
 
     private boolean takeShot = false;
 
+    private int matches = 0;
+
     private int counter = 0;
 
     private static String Tag = "MainActicity";
-    private int currentSlide;
+
+    private WebView myWebView;
+
+    private TextView matchesDisplay;
+
+
 
     static {
         if (OpenCVLoader.initDebug()) {
@@ -97,9 +104,14 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         cameraBridgeViewBase.setVisibility(View.VISIBLE);
         cameraBridgeViewBase.setCvCameraViewListener(this);
 
+        matchesDisplay = findViewById(R.id.matchesDisplay);
+        matchesDisplay.setText("Number of Matches: " + matches);
 
         screens = new ArrayList<Mat>();
-        final WebView myWebView = findViewById(R.id.webClient);
+
+        myWebView = findViewById(R.id.webClient);
+
+
         WebViewClient MyWebViewClient = new WebViewClient();
         myWebView.setWebViewClient(MyWebViewClient);
 
@@ -109,50 +121,51 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         myWebView.getSettings().setUserAgentString(USER_AGENT);
 
 
+
         imageView = (ImageView) findViewById(R.id.imageView);
         Button startAnalysis = findViewById(R.id.startAnalysis);
         startAnalysis.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
-                LinearLayout cameraLayout = (LinearLayout) findViewById(R.id.cameraNest);
-
-                View cameraNest = cameraLayout;
-
-                JavaCamera2View cameraDisplay = findViewById(R.id.javaCamera2View);
-
-
-                //Bitmap cameraScreenshot = Bitmap.createBitmap(cameraDisplay);
-
-                //View v1 = getWindow().getDecorView();
-                Bitmap b = Screenshot.takeScreenshot(myWebView);
-                //Bitmap a = Screenshot.takeScreenshot(cameraNest);
-
-
-                Bitmap a = loadBitmapFromView(cameraLayout);
-                imageView.setImageBitmap(a);
-                //cameraLayout.setVisibility(View.GONE);
-
-                Bitmap amp32 = a.copy(Bitmap.Config.ARGB_8888, true);
-                Bitmap bmp32 = b.copy(Bitmap.Config.ARGB_8888, true);
-
-                Mat mat = new Mat();
-                Mat cameraMat = new Mat();
-
-                Utils.bitmapToMat(bmp32, mat);
-                Utils.bitmapToMat(amp32, cameraMat);
-
-                screens.add(mat);
-
-                if (mat == null || mat.empty()) {
-                    Toast.makeText(getApplicationContext(), "Screenshot is null", Toast.LENGTH_SHORT).show();
-                } else if (cameraMat == null || cameraMat.empty()) {
-
-                    Toast.makeText(getApplicationContext(), "camera is null", Toast.LENGTH_SHORT).show();
-
-                } else {
-
-
+//                LinearLayout cameraLayout = (LinearLayout) findViewById(R.id.cameraNest);
+//
+//                View cameraNest = cameraLayout;
+//
+//                JavaCamera2View cameraDisplay = findViewById(R.id.javaCamera2View);
+//
+//
+//                //Bitmap cameraScreenshot = Bitmap.createBitmap(cameraDisplay);
+//
+//                //View v1 = getWindow().getDecorView();
+//
+//                //Bitmap a = Screenshot.takeScreenshot(cameraNest);
+//
+//
+//                Bitmap a = loadBitmapFromView(cameraLayout);
+//                imageView.setImageBitmap(a);
+//                //cameraLayout.setVisibility(View.GONE);
+//
+//                Bitmap amp32 = a.copy(Bitmap.Config.ARGB_8888, true);
+//                Bitmap bmp32 = b.copy(Bitmap.Config.ARGB_8888, true);
+//
+//                Mat mat = new Mat();
+//                Mat cameraMat = new Mat();
+//
+//                Utils.bitmapToMat(bmp32, mat);
+//                Utils.bitmapToMat(amp32, cameraMat);
+//
+//                screens.add(mat);
+//
+//                if (mat == null || mat.empty()) {
+//                    Toast.makeText(getApplicationContext(), "Screenshot is null", Toast.LENGTH_SHORT).show();
+//                } else if (cameraMat == null || cameraMat.empty()) {
+//
+//                    Toast.makeText(getApplicationContext(), "camera is null", Toast.LENGTH_SHORT).show();
+//
+//                } else {
+//
+//
 //                    Mat hsvMat = new Mat();
 //                    Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_RGB2HSV);
 //
@@ -163,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 //                    int matchNum = matches(hsvMat, hsvTempImage);
 //
 //                    Toast.makeText(getApplicationContext(), "Number of Matches: " + matchNum, Toast.LENGTH_SHORT).show();
-                }
+//                }
             }
         });
 
@@ -173,8 +186,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             @Override
             public void onClick(View view) {
 
-              System.out.println();
-              imageView.setImageBitmap(getScreens(myWebView));
+                System.out.println();
+                imageView.setImageBitmap(getScreens(myWebView));
             }
         });
 
@@ -184,6 +197,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             @Override
             public void onClick(View view) {
                 myWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+                counter++;
             }
         });
 
@@ -219,12 +233,15 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     }
 
+
+
     public static Bitmap loadBitmapFromView(View v) {
         Bitmap b = Bitmap.createBitmap(v.getLayoutParams().width, v.getLayoutParams().height, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
         v.layout(v.getLeft(), v.getTop(), v.getRight(), v.getBottom());
         v.draw(c);
         return b;
+
     }
 
     @Override
@@ -233,6 +250,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Mat frame = inputFrame.rgba();
         Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGB2BGR);
 
+        matches = matches(frame);
+        System.out.print(" Number of matches" + matches);
         return frame;
     }
 
@@ -275,33 +294,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
     }
 
-    private void getMatchNums(WebView view) {
-        int cmn = 0;
-        for (int i = 0; i < matchNums.length; i++) {
-            int[] toBeAveraged = new int[5];
-            int count = 0;
-            long start = java.lang.System.currentTimeMillis();
-
-            while (count != 5) {
-                if((java.lang.System.currentTimeMillis() - start) % 500 == 0) {//need something here to know when to add number in array
-                    toBeAveraged[count] = cmn;
-                    count++;
-                }
-            }
-            int average = 0;
-            for (int num : toBeAveraged) {
-                average += num;
-            }
-            average /= 5;
-
-            matchNums[i] = average;
-
-            view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
-        }
-
-
-    }
-
     private Bitmap getScreens(WebView view) {
         int i = 0;
         Bitmap previous = null;
@@ -322,7 +314,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             Utils.bitmapToMat(b.copy(Bitmap.Config.ARGB_8888, true), mat);
             screens.add(mat);
             view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
-
             i++;
             previous = Bitmap.createBitmap(b);
             System.out.println(screens.size());
@@ -349,71 +340,86 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
     }
 
-    private int topMatch(Mat currentImage) {
-        int max = 0;
-        int maxIndex = -1;
-
-        for (int i = 0; i < screens.size(); i++) {
-            int currentMatch = matches(screens.get(i), currentImage);
-            if (currentMatch > max) {
-                max = currentMatch;
-                maxIndex = -1;
-            }
-        }
-        return maxIndex;
-    }
-
-
-
-//    private void changeSlides(int to) {
-//        if (currentSlide > to) {
-//            for ()
+//    private int topMatch(Mat currentImage) {
+//        int max = 0;
+//        int maxIndex = -1;
+//
+//        for (int i = 0; i < screens.size(); i++) {
+//            int currentMatch = matches(screens.get(i), currentImage);
+//            if (currentMatch > max) {
+//                max = currentMatch;
+//                maxIndex = -1;
+//            }
 //        }
+//        return maxIndex;
 //    }
 
 
-    public int matches(Mat img1, Mat img2) {
+    public int matches(Mat img1) {
 
-//        img1 = Imgcodecs.imread(filename1, Imgcodecs.IMREAD_GRAYSCALE);
-//        img2 = Imgcodecs.imread(filename2, Imgcodecs.IMREAD_GRAYSCALE);
-//        if (img1.empty() || img2.empty()) {
-//            System.err.println("Cannot read images!");
-//            System.exit(0);
-//        }
-        //-- Step 1: Detect the keypoints using SURF Detector, compute the descriptors
+        System.out.println("algoritm started");
+
+        Bitmap b = Screenshot.takeScreenshot(myWebView);
+        Bitmap bmp32 = b.copy(Bitmap.Config.ARGB_8888, true);
+
+        Mat img2 = new Mat();
+        Utils.bitmapToMat(bmp32, img2);
+
+        Mat hsvMat = new Mat();
+        Imgproc.cvtColor(img1, hsvMat, Imgproc.COLOR_RGB2HSV);
+
+        Mat hsvTempImage = new Mat();
+        Imgproc.cvtColor(img2, hsvTempImage, Imgproc.COLOR_RGB2HSV);
+
+        img1 = hsvMat;
+        img2 = hsvTempImage;
+        if (img2 == null || img2.empty()) {
+            System.out.println("screenshot null");
+//            Toast.makeText(getApplicationContext(), "Screenshot is null", Toast.LENGTH_SHORT).show();
+
+        } else if (img1 == null || img1.empty()) {
+            System.out.println("camera null");
+//            Toast.makeText(getApplicationContext(), "camera is null", Toast.LENGTH_SHORT).show();
+
+        } else {
+            double hessianThreshold = 400;
+            int nOctaves = 4, nOctaveLayers = 3;
+            boolean extended = false, upright = false;
+            SURF detector = SURF.create(hessianThreshold, nOctaves, nOctaveLayers, extended, upright);
+            MatOfKeyPoint keypoints1 = new MatOfKeyPoint(), keypoints2 = new MatOfKeyPoint();
+            Mat descriptors1 = new Mat(), descriptors2 = new Mat();
 
 
-        double hessianThreshold = 400;
-        int nOctaves = 4, nOctaveLayers = 3;
-        boolean extended = false, upright = false;
-        SURF detector = SURF.create(hessianThreshold, nOctaves, nOctaveLayers, extended, upright);
-        MatOfKeyPoint keypoints1 = new MatOfKeyPoint(), keypoints2 = new MatOfKeyPoint();
-        Mat descriptors1 = new Mat(), descriptors2 = new Mat();
-
-
-        detector.detectAndCompute(img1, new Mat(), keypoints1, descriptors1);
-        detector.detectAndCompute(img2, new Mat(), keypoints2, descriptors2);
-        //-- Step 2: Matching descriptor vectors with a FLANN based matcher
-        // Since SURF is a floating-point descriptor NORM_L2 is used
-        DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
-        List<MatOfDMatch> knnMatches = new ArrayList<>();
-        matcher.knnMatch(descriptors1, descriptors2, knnMatches, 2);
-        //-- Filter matches using the Lowe's ratio test
-        float ratioThresh = 0.7f;
-        List<DMatch> listOfGoodMatches = new ArrayList<>();
-        for (int i = 0; i < knnMatches.size(); i++) {
-            if (knnMatches.get(i).rows() > 1) {
-                DMatch[] matches = knnMatches.get(i).toArray();
-                if (matches[0].distance < ratioThresh * matches[1].distance) {
-                    listOfGoodMatches.add(matches[0]);
+            detector.detectAndCompute(img1, new Mat(), keypoints1, descriptors1);
+            detector.detectAndCompute(img2, new Mat(), keypoints2, descriptors2);
+            //-- Step 2: Matching descriptor vectors with a FLANN based matcher
+            // Since SURF is a floating-point descriptor NORM_L2 is used
+            DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
+            List<MatOfDMatch> knnMatches = new ArrayList<>();
+            matcher.knnMatch(descriptors1, descriptors2, knnMatches, 2);
+            //-- Filter matches using the Lowe's ratio test
+            float ratioThresh = 0.7f;
+            List<DMatch> listOfGoodMatches = new ArrayList<>();
+            for (int i = 0; i < knnMatches.size(); i++) {
+                if (knnMatches.get(i).rows() > 1) {
+                    DMatch[] matches = knnMatches.get(i).toArray();
+                    if (matches[0].distance < ratioThresh * matches[1].distance) {
+                        listOfGoodMatches.add(matches[0]);
+                    }
                 }
             }
+            MatOfDMatch goodMatches = new MatOfDMatch();
+            goodMatches.fromList(listOfGoodMatches);
+
+            int matches = listOfGoodMatches.size();
+            System.out.println("number of mat: " + matches);
+//            Toast.makeText(getApplicationContext(), "camera is null", Toast.LENGTH_SHORT).show();
+            return matches;
         }
-        MatOfDMatch goodMatches = new MatOfDMatch();
-        goodMatches.fromList(listOfGoodMatches);
 
+        return counter;
+    }
 
-        return listOfGoodMatches.size();
 
 
 /**
@@ -441,7 +447,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
  */
 
 
-    }
+
 
 
     static MatOfDMatch filterMatchesByDistance(MatOfDMatch matches) {
