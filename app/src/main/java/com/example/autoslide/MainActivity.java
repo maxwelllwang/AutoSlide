@@ -30,6 +30,7 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 import org.opencv.android.JavaCameraView;
+import org.opencv.core.Size;
 import org.opencv.features2d.BFMatcher;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.FeatureDetector;
@@ -75,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private boolean takeShot = false;
 
-    private int[] matchNums = new int[200];
+    private int[] matchNums = new int[9];
     private int currentSlide = 0;
 
     private int matches = 0;
@@ -88,12 +89,15 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private TextView matchesDisplay;
 
+    private int max = 0;
+    private int maxIndex = -1;
+
     FeatureDetector detector;
     DescriptorExtractor descriptor;
     DescriptorMatcher matcher;
-    Mat descriptors2,descriptors1;
+    Mat descriptors2, descriptors1;
     Mat img1;
-    MatOfKeyPoint keypoints1,keypoints2;
+    MatOfKeyPoint keypoints1, keypoints2;
 
     static {
         if (OpenCVLoader.initDebug()) {
@@ -263,11 +267,30 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         if (takeShot) {
             Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGB2BGR);
+            Mat smallerFrame = new Mat();
+            try {
 
-            matches(frame);
-            System.out.print(" Number of matches" + matches);
+                Imgproc.resize(frame, smallerFrame, new Size(900, 675));
+            } catch (Exception e) {
+
+            }
+
+            getMatchNums(myWebView, smallerFrame);
+
+
+
+//            int top = topMatch();
+            System.out.println("top: " + maxIndex);
+            goToSlide(myWebView, maxIndex);
+            takeShot = false;
+            goToSlide(myWebView,0);
+            max = 0;
+            maxIndex = -1;
+
+
+
+
         }
-
 
 
         return frame;
@@ -312,34 +335,53 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
     }
 
-    private void getMatchNums(WebView view) {
+    private void getMatchNums(WebView view, Mat frame) {
         //int cmn = 0;
+
         for (int i = 0; i < matchNums.length; i++) {
-            int[] toBeAveraged = new int[5];
-            int count = 0;
-            long start = java.lang.System.currentTimeMillis();
+            System.out.println("i " + i);
+            matches(frame);
+            //int[] toBeAveraged = new int[5];
+//            int count = 0;
+//            long start = java.lang.System.currentTimeMillis();
 
-            while (count != 5) {
-                if((java.lang.System.currentTimeMillis() - start) % 500 == 0) {//need something here to know when to add number in array
-                    toBeAveraged[count] = matches;
-                    count++;
-                }
-            }
-            int average = 0;
-            for (int num : toBeAveraged) {
-                average += num;
-            }
-            average /= 5;
+//            while (count != 5) {
+//
+//                if ((java.lang.System.currentTimeMillis() - start) % 500 == 0) {//need something here to know when to add number in array
+//                    toBeAveraged[count] = matches;
+//                    count++;
+//                }
+//            }
 
-            matchNums[i] = average;
+//            int average = 0;
+//            for (int num : toBeAveraged) {
+//                average += num;
+//            }
+//            average /= 5;
+
+            matchNums[currentSlide] = matches;
+            System.out.print("Current Slide: "+ currentSlide + " Number of matches: " + matches);
+
+            if(matches > max) {
+                max = matches;
+                maxIndex = currentSlide;
+            }
 
             view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+            for(int j = 0; j<400; j++){}
+
+            matches = 0;
+            currentSlide++;
+        }
+        for (int num : matchNums) {
+            System.out.println(num);
         }
 
 
+
+
+
     }
-
-
 
 
 //    private Bitmap getScreens(WebView view) {
@@ -394,8 +436,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         for (int i = 0; i < matchNums.length; i++) {
             if (matchNums[i] > 0) {
-                maxIndex = i;
                 max = matchNums[i];
+                maxIndex = i;
+
 
             }
         }
@@ -403,16 +446,24 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     }
 
     private void goToSlide(View v, int to) {
-        if (to > currentSlide) {
-            int moves = to - currentSlide;
-            for (int i = 0; i < moves; i++) {
-                v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
-            }
+//        if (to > currentSlide) {
+//            int moves = to - currentSlide;
+//            for (int i = 0; i < moves; i++) {
+//                v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+//            }
+//        }
+//
+//        int moves = currentSlide - to;
+//        for (int i = 0; i < moves; i++) {
+//            v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
+//        }
+
+        for (int i = 0; i < 30; i++) {
+            v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
         }
 
-        int moves = currentSlide - to;
-        for (int i = 0; i < moves; i++) {
-            v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
+        for (int i = 0; i < to; i++) {
+            v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
         }
 
     }
@@ -439,8 +490,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Bitmap b = Screenshot.takeScreenshot(myWebView);
         Bitmap bmp32 = b.copy(Bitmap.Config.ARGB_8888, true);
 
+        Mat imgTwo = new Mat();
+        Utils.bitmapToMat(bmp32, imgTwo);
+
         Mat img2 = new Mat();
-        Utils.bitmapToMat(bmp32, img2);
+        Imgproc.resize(imgTwo, img2, new Size(900, 675));
+
 
         System.out.println("algoritm rarted");
 //        Mat hsvMat = new Mat();
@@ -455,19 +510,19 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         double hessianThreshold = 400;
         int nOctaves = 4, nOctaveLayers = 3;
         boolean extended = false, upright = false;
-        System.out.println("1");
+        //System.out.println("1");
         SURF detector = SURF.create(hessianThreshold, nOctaves, nOctaveLayers, extended, upright);
         MatOfKeyPoint keypoints1 = new MatOfKeyPoint(), keypoints2 = new MatOfKeyPoint();
         Mat descriptors1 = new Mat(), descriptors2 = new Mat();
 
-        System.out.println("2");
+        //System.out.println("2");
         detector.detectAndCompute(img1, new Mat(), keypoints1, descriptors1);
         detector.detectAndCompute(img2, new Mat(), keypoints2, descriptors2);
-        System.out.println("3");
+        //System.out.println("3");
         //-- Step 2: Matching descriptor vectors with a FLANN based matcher
         // Since SURF is a floating-point descriptor NORM_L2 is used
         DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
-        System.out.println("4");
+       // System.out.println("4");
 
         List<MatOfDMatch> knnMatches = new ArrayList<>();
         matcher.knnMatch(descriptors1, descriptors2, knnMatches, 2);
@@ -484,7 +539,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 }
             }
         }
-        System.out.println("5");
+        //System.out.println("5");
         //MatOfDMatch goodMatches = new MatOfDMatch();
         //goodMatches.fromList(listOfGoodMatches);
 
@@ -492,10 +547,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         matches = goodMatch;
         System.out.println("number of mat: " + goodMatch);
 //            Toast.makeText(getApplicationContext(), "camera is null", Toast.LENGTH_SHORT).show();
-
-
-
-
 
 
     }
