@@ -200,7 +200,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             public void onClick(View view) {
 
                 System.out.println();
-                imageView.setImageBitmap(getScreens(myWebView));
+                //imageView.setImageBitmap(getScreens(myWebView));
             }
         });
 
@@ -342,34 +342,34 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
 
 
-    private Bitmap getScreens(WebView view) {
-        int i = 0;
-        Bitmap previous = null;
-        Bitmap b = null;
-        int matchNum = 0;
-        //boolean same;
-        do {
-            b = Screenshot.takeScreenshot(view);
-            System.out.println(previous);
-            System.out.println(b);
-            if (b.sameAs(previous)) {
-                System.out.print("same ");
-                System.out.println(i);
-                break;
-            }
-            //imageView.setImageBitmap(b);
-            Mat mat = new Mat();
-            Utils.bitmapToMat(b.copy(Bitmap.Config.ARGB_8888, true), mat);
-            screens.add(mat);
-            view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
-            i++;
-            previous = Bitmap.createBitmap(b);
-            System.out.println(screens.size());
-        } while (true);
-
-        return b;
-
-    }
+//    private Bitmap getScreens(WebView view) {
+//        int i = 0;
+//        Bitmap previous = null;
+//        Bitmap b = null;
+//        int matchNum = 0;
+//        //boolean same;
+//        do {
+//            b = Screenshot.takeScreenshot(view);
+//            System.out.println(previous);
+//            System.out.println(b);
+//            if (b.sameAs(previous)) {
+//                System.out.print("same ");
+//                System.out.println(i);
+//                break;
+//            }
+//            //imageView.setImageBitmap(b);
+//            Mat mat = new Mat();
+//            Utils.bitmapToMat(b.copy(Bitmap.Config.ARGB_8888, true), mat);
+//            screens.add(mat);
+//            view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+//            i++;
+//            previous = Bitmap.createBitmap(b);
+//            System.out.println(screens.size());
+//        } while (true);
+//
+//        return b;
+//
+//    }
 
 
     private static boolean compare(Bitmap b1, Bitmap b2) {
