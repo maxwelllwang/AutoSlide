@@ -26,10 +26,15 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 import org.opencv.android.JavaCameraView;
+import org.opencv.features2d.BFMatcher;
+import org.opencv.features2d.DescriptorExtractor;
+import org.opencv.features2d.FeatureDetector;
+import org.opencv.features2d.ORB;
 import org.opencv.imgproc.Imgproc;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -44,7 +49,6 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.Features2d;
-import org.opencv.highgui.HighGui;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.xfeatures2d.SURF;
@@ -53,18 +57,21 @@ import org.opencv.xfeatures2d.SURF;
 import java.io.File;
 import java.io.FileOutputStream;
 
-public class MainActivity extends AppCompatActivity implements  CameraBridgeViewBase.CvCameraViewListener2 {
+public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
     CameraBridgeViewBase cameraBridgeViewBase;
     BaseLoaderCallback baseLoaderCallback;
     public static final String USER_AGENT = "Mozilla/5.0 (Linux; Android 4.1.1; Galaxy Nexus Build/JRO03C) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19";
     private static ArrayList<Mat> screens;
-    private static ArrayList<Bitmap> screenBits;
     private ImageView imageView;
 
     private Mat tempImage;
+    private Mat tempScreenshot;
+
+    private int counter = 0;
 
     private static String Tag = "MainActicity";
+
     static {
         if (OpenCVLoader.initDebug()) {
             Log.d(Tag, "sucess");
@@ -72,6 +79,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
             Log.d(Tag, "fail");
         }
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,7 +88,6 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         cameraBridgeViewBase = findViewById(R.id.javaCamera2View);
         cameraBridgeViewBase.setVisibility(View.VISIBLE);
         cameraBridgeViewBase.setCvCameraViewListener(this);
-
 
 
         screens = new ArrayList<Mat>();
@@ -94,13 +101,38 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         myWebView.getSettings().setUserAgentString(USER_AGENT);
 
         Button screenshot = findViewById(R.id.screenshotButton);
-        imageView = (ImageView) findViewById(R.id.imageView);
+
         screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                getScreens(myWebView);
-                //imageView.setImageBitmap(getScreens(myWebView));
+                Bitmap b = Screenshot.takeScreenshot(myWebView);
+                //imageView.setImageBitmap(b);
+                Bitmap bmp32 = b.copy(Bitmap.Config.ARGB_8888, true);
+                Mat mat = new Mat();
+                Utils.bitmapToMat(bmp32, mat);
+                screens.add(mat);
 
+                if (mat == null || mat.empty()) {
+                    Toast.makeText(getApplicationContext(), "Screenshot is null", Toast.LENGTH_SHORT).show();
+                } else if (tempImage == null || tempImage.empty()) {
+
+                    Toast.makeText(getApplicationContext(), "camera is null", Toast.LENGTH_SHORT).show();
+
+                } else {
+
+
+                    Mat hsvMat = new Mat();
+                    Imgproc.cvtColor(mat, hsvMat, Imgproc.COLOR_RGB2HSV);
+                    Mat hsvTempImage = new Mat();
+                    Imgproc.cvtColor(tempImage, hsvTempImage, Imgproc.COLOR_RGB2HSV);
+
+
+
+
+                    int matchNum = matches(hsvMat, hsvTempImage);
+
+                    Toast.makeText(getApplicationContext(), "Number of Matches: " + matchNum, Toast.LENGTH_SHORT).show();
+                }
 
             }
         });
@@ -128,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
             public void onManagerConnected(int status) {
                 super.onManagerConnected(status);
 
-                switch(status){
+                switch (status) {
 
                     case BaseLoaderCallback.SUCCESS:
                         cameraBridgeViewBase.enableView();
@@ -146,13 +178,16 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
 
     }
 
+
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
         Mat frame = inputFrame.rgba();
 
+
+
         tempImage = frame;
-//        Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BayerBG2BGR);
+
         return frame;
     }
 
@@ -170,12 +205,9 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
     protected void onResume() {
         super.onResume();
 
-        if (!OpenCVLoader.initDebug()){
-            Toast.makeText(getApplicationContext(),"There's a problem, yo!", Toast.LENGTH_SHORT).show();
-        }
-
-        else
-        {
+        if (!OpenCVLoader.initDebug()) {
+            Toast.makeText(getApplicationContext(), "There's a problem, yo!", Toast.LENGTH_SHORT).show();
+        } else {
             baseLoaderCallback.onManagerConnected(baseLoaderCallback.SUCCESS);
         }
 
@@ -184,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
     @Override
     protected void onPause() {
         super.onPause();
-        if(cameraBridgeViewBase!=null){
+        if (cameraBridgeViewBase != null) {
 
             cameraBridgeViewBase.disableView();
         }
@@ -193,85 +225,80 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (cameraBridgeViewBase!=null){
+        if (cameraBridgeViewBase != null) {
             cameraBridgeViewBase.disableView();
         }
     }
 
-    private Bitmap getScreens(WebView view) {
-        int i = 0;
-        Bitmap previous = null;
-        //boolean same;
-        do {
-            Bitmap b = Screenshot.takeScreenshot(view);
-            System.out.println(previous);
-            System.out.println(b);
-            if (compare(b, previous)) {
-                System.out.print("same ");
-                System.out.println(i);
-                break;
-            }
-            //imageView.setImageBitmap(b);
-            Mat mat = new Mat();
-            Utils.bitmapToMat(b.copy(Bitmap.Config.ARGB_8888, true), mat);
-            screens.add(mat);
-            view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
-            i++;
-            previous = Bitmap.createBitmap(b);
-            System.out.println(screens.size());
-        } while(true);
 
-        return previous;
+    /**
+     * Take a screen shot of the screen.
+     *
+     * @param id the id of the picture to be taken
+     * @return the URL of the photo
+     */
+    private String takeScreenShot(int id) {
 
-    }
+        try {
+            // image naming and path  to include sd card  appending name you choose for file
+            String mPath = Environment.getExternalStorageDirectory().toString() + "/" + id + ".jpg";
+            //System.out.println(mPath);
 
-//    public static boolean matEquals(Mat img1, Mat img2){
-//        Mat out = new Mat();
-//        //Core.compare(img1, img2, out, Core.CMP_NE);
-//        Core.subtract(img1, img2, out);
-//        return Core.countNonZero(out) == 0;
-//    }
 
-    private static boolean compare(Bitmap b1, Bitmap b2) {
-        if (b1.getWidth() == b2.getWidth() && b1.getHeight() == b2.getHeight()) {
-            int[] pixels1 = new int[b1.getWidth() * b1.getHeight()];
-            int[] pixels2 = new int[b2.getWidth() * b2.getHeight()];
-            b1.getPixels(pixels1, 0, b1.getWidth(), 0, 0, b1.getWidth(), b1.getHeight());
-            b2.getPixels(pixels2, 0, b2.getWidth(), 0, 0, b2.getWidth(), b2.getHeight());
-            if (Arrays.equals(pixels1, pixels2)) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
+            // create bitmap screen capture
+            View v1 = findViewById(R.id.webClient);
+//            For fragment view activate below line
+//            View v1 = getActivity().getWindow().getDecorView().getRootView();
+            v1.setDrawingCacheEnabled(true);
+            Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
+            v1.setDrawingCacheEnabled(false);
 
-    private int topMatch(Mat currentImage) {
-        int max = 0;
-        int maxIndex = -1;
-
-        for (int i = 0; i < screens.size(); i++) {
-            int currentMatch = matches(screens.get(i), currentImage);
-            if (currentMatch > max) {
-                max = currentMatch;
-                maxIndex = i;
-            }
+            File imageFile = new File(mPath);
+            //Toast.makeText(MainActivity.this, mPath, Toast.LENGTH_SHORT).show();
+            FileOutputStream outputStream = new FileOutputStream(imageFile);
+            int quality = 100;
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
+            outputStream.flush();
+            outputStream.close();
+//            Test
+            openScreenshot(imageFile);
+            return mPath;
+        } catch (Throwable e) {
+            // Several error may come out with file handling or DOM
+            e.printStackTrace();
         }
 
-        return maxIndex;
+        return null;
     }
 
-    //WORK IN PROGRESS
-    private int topMatchOptimized(Mat currentImage) {
-        int max = 0;
-        int maxIndex = -1;
-
-        return 0;
+    /**
+     * Opening a screen capture
+     *
+     * @param imageFile
+     */
+    private void openScreenshot(File imageFile) {
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        Uri uri = Uri.fromFile(imageFile);
+        intent.setDataAndType(uri, "image/*");
+        startActivity(intent);
     }
 
-
+    /**
+     * Another capture screen method for testing
+     *
+     * @param view root view to capture
+     * @return the screenshot
+     */
+    public Bitmap screenShot(WebView view) {
+        Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
+        Picture picture = view.capturePicture();
+        Canvas canvas = new Canvas(bitmap);
+//        view.draw(canvas);
+        canvas.drawPicture(picture);
+        FileOutputStream fos = null;
+        return bitmap;
+    }
 
     public int matches(Mat img1, Mat img2) {
 
@@ -290,6 +317,8 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         SURF detector = SURF.create(hessianThreshold, nOctaves, nOctaveLayers, extended, upright);
         MatOfKeyPoint keypoints1 = new MatOfKeyPoint(), keypoints2 = new MatOfKeyPoint();
         Mat descriptors1 = new Mat(), descriptors2 = new Mat();
+
+
         detector.detectAndCompute(img1, new Mat(), keypoints1, descriptors1);
         detector.detectAndCompute(img2, new Mat(), keypoints2, descriptors2);
         //-- Step 2: Matching descriptor vectors with a FLANN based matcher
@@ -314,6 +343,53 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
 
         return listOfGoodMatches.size();
 
+
+/**
+ * ORB orb = ORB.create();
+ *
+ *         Mat descriptors1 = new Mat();
+ *         MatOfKeyPoint keypoints1 = new MatOfKeyPoint();
+ *         Mat mask1 = new Mat();
+ *         orb.detectAndCompute(img1, mask1, keypoints1, descriptors1);
+ *
+ *         Mat descriptors2 = new Mat();
+ *         MatOfKeyPoint keypoints2 = new MatOfKeyPoint();
+ *         Mat mask2 = new Mat();
+ *         orb.detectAndCompute(img2, mask2, keypoints2, descriptors2);
+ *
+ *         BFMatcher bf = BFMatcher.create();
+ *         MatOfDMatch potMatch = new MatOfDMatch();
+ *         List matches = new ArrayList();
+ *         bf.match(descriptors1, descriptors2, potMatch);
+ *
+ *         matches = potMatch.toList();
+ *
+ *
+ *         return matches.size();
+ */
+
+
+    }
+
+
+    static MatOfDMatch filterMatchesByDistance(MatOfDMatch matches) {
+        List<DMatch> matches_original = matches.toList();
+        List<DMatch> matches_filtered = new ArrayList<DMatch>();
+
+        int DIST_LIMIT = 30;
+        // Check all the matches distance and if it passes add to list of filtered matches
+        Log.d("DISTFILTER", "ORG SIZE:" + matches_original.size() + "");
+        for (int i = 0; i < matches_original.size(); i++) {
+            DMatch d = matches_original.get(i);
+            if (Math.abs(d.distance) <= DIST_LIMIT) {
+                matches_filtered.add(d);
+            }
+        }
+        Log.d("DISTFILTER", "FIL SIZE:" + matches_filtered.size() + "");
+
+        MatOfDMatch mat = new MatOfDMatch();
+        mat.fromList(matches_filtered);
+        return mat;
     }
 
 }
