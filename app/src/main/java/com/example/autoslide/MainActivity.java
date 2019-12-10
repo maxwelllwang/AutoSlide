@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private static ArrayList<Mat> screens;
     private ImageView imageView;
 
+    private static int[] matchNums = new int[200];
     private Mat tempImage;
     private Mat tempScreenshot;
 
@@ -77,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private int counter = 0;
 
     private static String Tag = "MainActicity";
+    private int currentSlide;
 
     static {
         if (OpenCVLoader.initDebug()) {
@@ -273,6 +275,33 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
     }
 
+    private void getMatchNums(WebView view) {
+        int cmn = 0;
+        for (int i = 0; i < matchNums.length; i++) {
+            int[] toBeAveraged = new int[5];
+            int count = 0;
+            long start = java.lang.System.currentTimeMillis();
+
+            while (count != 5) {
+                if((java.lang.System.currentTimeMillis() - start) % 500 == 0) {//need something here to know when to add number in array
+                    toBeAveraged[count] = cmn;
+                    count++;
+                }
+            }
+            int average = 0;
+            for (int num : toBeAveraged) {
+                average += num;
+            }
+            average /= 5;
+
+            matchNums[i] = average;
+
+            view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+        }
+
+
+    }
+
     private Bitmap getScreens(WebView view) {
         int i = 0;
         Bitmap previous = null;
@@ -293,6 +322,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             Utils.bitmapToMat(b.copy(Bitmap.Config.ARGB_8888, true), mat);
             screens.add(mat);
             view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+
             i++;
             previous = Bitmap.createBitmap(b);
             System.out.println(screens.size());
@@ -332,6 +362,14 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
         return maxIndex;
     }
+
+
+
+//    private void changeSlides(int to) {
+//        if (currentSlide > to) {
+//            for ()
+//        }
+//    }
 
 
     public int matches(Mat img1, Mat img2) {
