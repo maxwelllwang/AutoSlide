@@ -96,12 +96,7 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Bitmap b = Screenshot.takeScreenshot(myWebView);
-                imageView.setImageBitmap(b);
-                Bitmap bmp32 = b.copy(Bitmap.Config.ARGB_8888, true);
-                Mat mat = new Mat();
-                Utils.bitmapToMat(bmp32, mat);
-                screens.add(mat);
+                getScreens(myWebView);
 
 
             }
@@ -200,6 +195,31 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         }
     }
 
+    private void getScreens(WebView view) {
+        int i = 0;
+        do {
+            Bitmap b = Screenshot.takeScreenshot(view);
+            //imageView.setImageBitmap(b);
+            Mat mat = new Mat();
+            Utils.bitmapToMat(b.copy(Bitmap.Config.ARGB_8888, true), mat);
+            screens.add(mat);
+            view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+            i++;
+
+        } while(i <= 2 || compare(screens.get(i-1), screens.get(i-2)));
+
+
+    }
+
+    private boolean compare(Mat a, Mat b) {
+        Mat mat = new Mat();
+        Core.compare(a, b, mat, Core.CMP_EQ);
+        if (Core.countNonZero(mat) < 1) {
+            return true;
+        }
+        return false;
+
+    }
 
     private int topMatch(Mat currentImage) {
         int max = 0;
@@ -214,6 +234,14 @@ public class MainActivity extends AppCompatActivity implements  CameraBridgeView
         }
 
         return maxIndex;
+    }
+
+    //WORK IN PROGRESS
+    private int topMatchOptimized(Mat currentImage) {
+        int max = 0;
+        int maxIndex = -1;
+
+        return 0;
     }
 
 
