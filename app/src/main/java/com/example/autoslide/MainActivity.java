@@ -338,6 +338,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private void getMatchNums(WebView view, Mat frame) {
         //int cmn = 0;
 
+
+        /* TODO Change the for loop condition to a while loop that compares two Bitmaps/Mats using match so
+            it knows when to stop getting slides. We can just compare the match values stored in the array
+            to see if it is within a certain threshold */
+
         for (int i = currentSlide; i < matchNums.length; i++) {
             System.out.println("currentSlide " + currentSlide);
             matches(frame);
