@@ -283,7 +283,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             System.out.println("top: " + maxIndex);
             goToSlide(myWebView, maxIndex);
             takeShot = false;
-            goToSlide(myWebView,0);
+//            goToSlide(myWebView,0);
             max = 0;
             maxIndex = -1;
 
@@ -338,8 +338,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private void getMatchNums(WebView view, Mat frame) {
         //int cmn = 0;
 
-        for (int i = 0; i < matchNums.length; i++) {
-            System.out.println("i " + i);
+        for (int i = currentSlide; i < matchNums.length; i++) {
+            System.out.println("currentSlide " + currentSlide);
             matches(frame);
             //int[] toBeAveraged = new int[5];
 //            int count = 0;
@@ -360,7 +360,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 //            average /= 5;
 
             matchNums[currentSlide] = matches;
-            System.out.print("Current Slide: "+ currentSlide + " Number of matches: " + matches);
+            System.out.println("Current Slide: "+ currentSlide + " Number of matches: " + matches);
 
             if(matches > max) {
                 max = matches;
@@ -368,7 +368,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             }
 
             view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
-            for(int j = 0; j<400; j++){}
+            //for(int j = 0; j<400; j++){}
+            try {
+                wait(100l);
+            } catch (Exception e) {}
+
 
             matches = 0;
             currentSlide++;
