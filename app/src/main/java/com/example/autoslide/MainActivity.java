@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private boolean takeShot = false;
 
-    private int[] matchNums = new int[9];
+    private int[] matchNums;
     private int currentSlide = 0;
 
     private int matches = 0;
@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private int max = 0;
     private int maxIndex = -1;
+    private boolean init = false;
 
     FeatureDetector detector;
     DescriptorExtractor descriptor;
@@ -139,6 +140,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             @Override
             public void onClick(View view) {
 
+                if(!init) {
+                    matchNums = new int[getAmountSlides(myWebView) + 1];
+                }
 
                 if (takeShot) {
                     takeShot = false;
@@ -335,6 +339,23 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
     }
 
+    private int getCurrentSlide(WebView v) {
+        String temp = v.getUrl();
+        return Integer.parseInt(temp.substring(temp.length() - 2));
+    }
+
+    private int getAmountSlides(WebView v) {
+        for(int i = 0; i < 250; i++) {
+            myWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+        }
+
+        int curr = getCurrentSlide(v);
+
+        goToSlide(myWebView, 1);
+
+        return curr;
+    }
+
     private void getMatchNums(WebView view, Mat frame) {
         //int cmn = 0;
 
@@ -343,33 +364,21 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             it knows when to stop getting slides. We can just compare the match values stored in the array
             to see if it is within a certain threshold */
 
-        for (int i = currentSlide; i < matchNums.length; i++) {
-            System.out.println("currentSlide " + currentSlide);
+        /*
+        TODO Or we can get the last few digits of the URL of the web browser because it shows the slide num.
+         */
+
+
+
+        for (int i = getCurrentSlide(view); i < matchNums.length; i++) {
+            System.out.println("currentSlide " + getCurrentSlide(view));
             matches(frame);
-            //int[] toBeAveraged = new int[5];
-//            int count = 0;
-//            long start = java.lang.System.currentTimeMillis();
-
-//            while (count != 5) {
-//
-//                if ((java.lang.System.currentTimeMillis() - start) % 500 == 0) {//need something here to know when to add number in array
-//                    toBeAveraged[count] = matches;
-//                    count++;
-//                }
-//            }
-
-//            int average = 0;
-//            for (int num : toBeAveraged) {
-//                average += num;
-//            }
-//            average /= 5;
-
             matchNums[currentSlide] = matches;
-            System.out.println("Current Slide: "+ currentSlide + " Number of matches: " + matches);
+            System.out.println("Current Slide: "+ getCurrentSlide(view) + " Number of matches: " + matches);
 
             if(matches > max) {
                 max = matches;
-                maxIndex = currentSlide;
+                maxIndex = getCurrentSlide(view);
             }
 
             view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
@@ -380,7 +389,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
 
             matches = 0;
-            currentSlide++;
+            //currentSlide++;
         }
         for (int num : matchNums) {
             System.out.println(num);
@@ -392,35 +401,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     }
 
-
-//    private Bitmap getScreens(WebView view) {
-//        int i = 0;
-//        Bitmap previous = null;
-//        Bitmap b = null;
-//        int matchNum = 0;
-//        //boolean same;
-//        do {
-//            b = Screenshot.takeScreenshot(view);
-//            System.out.println(previous);
-//            System.out.println(b);
-//            if (b.sameAs(previous)) {
-//                System.out.print("same ");
-//                System.out.println(i);
-//                break;
-//            }
-//            //imageView.setImageBitmap(b);
-//            Mat mat = new Mat();
-//            Utils.bitmapToMat(b.copy(Bitmap.Config.ARGB_8888, true), mat);
-//            screens.add(mat);
-//            view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
-//            i++;
-//            previous = Bitmap.createBitmap(b);
-//            System.out.println(screens.size());
-//        } while (true);
-//
-//        return b;
-//
-//    }
 
 
     private static boolean compare(Bitmap b1, Bitmap b2) {
@@ -454,28 +434,21 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         return maxIndex;
     }
 
-    private void goToSlide(View v, int to) {
-//        if (to > currentSlide) {
-//            int moves = to - currentSlide;
-//            for (int i = 0; i < moves; i++) {
-//                v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
-//            }
-//        }
-//
-//        int moves = currentSlide - to;
-//        for (int i = 0; i < moves; i++) {
+    private void goToSlide(WebView v, int to) {
+
+//        for (int i = 0; i < 30; i++) {
 //            v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
 //        }
+//
+//        for (int i = 0; i < to; i++) {
+//            v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
+//        }
 
-        for (int i = 0; i < 30; i++) {
-            v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT));
-        }
-
-        for (int i = 0; i < to; i++) {
-            v.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
-        }
+        String URLPrefix = v.getUrl().substring(0, v.getUrl().length() - 2);
+        v.loadUrl(URLPrefix + to);
 
     }
+
 
 //    private int topMatch(Mat currentImage) {
 //        int max = 0;
