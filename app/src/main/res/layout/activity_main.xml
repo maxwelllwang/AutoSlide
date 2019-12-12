@@ -24,12 +24,12 @@
         android:id="@+id/startAnalysis"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="137dp"
-        android:layout_marginLeft="137dp"
-        android:layout_marginTop="50dp"
-        android:layout_marginEnd="137dp"
-        android:layout_marginRight="137dp"
         android:layout_marginBottom="549dp"
+        android:layout_marginEnd="137dp"
+        android:layout_marginLeft="137dp"
+        android:layout_marginRight="137dp"
+        android:layout_marginStart="137dp"
+        android:layout_marginTop="50dp"
         android:text="Begin Laziness"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -46,19 +46,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/startAnalysis"
-        app:layout_constraintVertical_bias="0.073" />
+        app:layout_constraintVertical_bias="0.073">
 
-    <Button
-        android:id="@+id/screenshotButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="screenshot"
-        app:layout_constraintBottom_toTopOf="@+id/webClient"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.474" />
+    </WebView>
 
     <Button
         android:id="@+id/leftArrow"
@@ -83,35 +73,47 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.196" />
 
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/screenshotButton"
-        android:layout_centerHorizontal="true"
-        android:scaleType="fitCenter"
-        tools:layout_editor_absoluteY="30dp" />
 
-    <LinearLayout
-        android:id="@+id/cameraNest"
-        android:layout_width="409dp"
-        android:layout_height="269dp"
-        android:layout_marginTop="475dp"
-        android:orientation="vertical"
+    <org.opencv.android.JavaCamera2View
+        android:id="@+id/javaCamera2View"
+        android:layout_width="400dp"
+        android:layout_height="250dp"
+        android:layout_marginTop="27dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/imageView">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.545"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/webClient"
+        app:layout_constraintVertical_bias="1.0" />
 
-        <org.opencv.android.JavaCamera2View
-            android:id="@+id/javaCamera2View"
-            android:layout_width="400dp"
-            android:layout_height="250dp" />
-    </LinearLayout>
+    <SeekBar
+        android:id="@+id/matchThreshold"
+        style="@style/Widget.AppCompat.SeekBar"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="92dp"
+        android:max="30"
+        android:progress="8"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/webClient"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.968" />
 
     <TextView
-        android:id="@+id/matchesDisplay"
+        android:id="@+id/displayThreshold"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        tools:layout_editor_absoluteX="37dp"
-        tools:layout_editor_absoluteY="88dp" />
+        android:layout_marginEnd="1dp"
+        android:layout_marginRight="1dp"
+        android:text="TextView"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/matchThreshold"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.139"
+        tools:visibility="gone" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

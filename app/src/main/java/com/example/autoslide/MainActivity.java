@@ -20,6 +20,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -87,17 +88,17 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private WebView myWebView;
 
-    private TextView matchesDisplay;
+
 
     private int max = 0;
     private int maxIndex = -1;
 
-    FeatureDetector detector;
-    DescriptorExtractor descriptor;
-    DescriptorMatcher matcher;
-    Mat descriptors2, descriptors1;
-    Mat img1;
-    MatOfKeyPoint keypoints1, keypoints2;
+    private int previousMatch = 0;
+
+    private boolean isFirstRun = true;
+
+    private int matchThreshold = 12;
+    private final int MATCHTHRESHOLD = 12;
 
     static {
         if (OpenCVLoader.initDebug()) {
@@ -116,13 +117,31 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         cameraBridgeViewBase.setVisibility(View.VISIBLE);
         cameraBridgeViewBase.setCvCameraViewListener(this);
 
-        matchesDisplay = findViewById(R.id.matchesDisplay);
-        matchesDisplay.setText("Number of Matches: " + matches);
+        SeekBar threshold = findViewById(R.id.matchThreshold);
+        threshold.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                matchThreshold = i;
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
 
         screens = new ArrayList<Mat>();
 
         myWebView = findViewById(R.id.webClient);
 
+        TextView displayThreshold = findViewById(R.id.displayThreshold);
+        displayThreshold.setText(String.valueOf(matchThreshold));
 
         WebViewClient MyWebViewClient = new WebViewClient();
         myWebView.setWebViewClient(MyWebViewClient);
@@ -133,7 +152,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         myWebView.getSettings().setUserAgentString(USER_AGENT);
 
 
-        imageView = (ImageView) findViewById(R.id.imageView);
+
         Button startAnalysis = findViewById(R.id.startAnalysis);
         startAnalysis.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -198,15 +217,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         });
 
 
-        Button screenshot = findViewById(R.id.screenshotButton);
-        screenshot.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
 
-                System.out.println();
-                //imageView.setImageBitmap(getScreens(myWebView));
-            }
-        });
 
         Button forward = findViewById(R.id.rightArrow);
         forward.setOnClickListener(new View.OnClickListener() {
@@ -275,17 +286,18 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
             }
 
-            getMatchNums(myWebView, smallerFrame);
+            matches(smallerFrame);
+//            matchesDisplay.setText(matches);
+            if (isFirstRun) {
+                previousMatch = matches;
+                isFirstRun = false;
+            } else {
+                if (Math.abs(matches - previousMatch) > MATCHTHRESHOLD) {
+                    myWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
 
-
-
-//            int top = topMatch();
-            System.out.println("top: " + maxIndex);
-            goToSlide(myWebView, maxIndex);
-            takeShot = false;
-            goToSlide(myWebView,0);
-            max = 0;
-            maxIndex = -1;
+                }
+                previousMatch = matches;
+            }
 
 
 
@@ -362,6 +374,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             matchNums[currentSlide] = matches;
             System.out.print("Current Slide: "+ currentSlide + " Number of matches: " + matches);
 
+            String s = "Number of Matches: " + matches;
+            Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
             if(matches > max) {
                 max = matches;
                 maxIndex = currentSlide;
@@ -383,67 +397,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     }
 
-
-//    private Bitmap getScreens(WebView view) {
-//        int i = 0;
-//        Bitmap previous = null;
-//        Bitmap b = null;
-//        int matchNum = 0;
-//        //boolean same;
-//        do {
-//            b = Screenshot.takeScreenshot(view);
-//            System.out.println(previous);
-//            System.out.println(b);
-//            if (b.sameAs(previous)) {
-//                System.out.print("same ");
-//                System.out.println(i);
-//                break;
-//            }
-//            //imageView.setImageBitmap(b);
-//            Mat mat = new Mat();
-//            Utils.bitmapToMat(b.copy(Bitmap.Config.ARGB_8888, true), mat);
-//            screens.add(mat);
-//            view.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT));
-//            i++;
-//            previous = Bitmap.createBitmap(b);
-//            System.out.println(screens.size());
-//        } while (true);
-//
-//        return b;
-//
-//    }
+    private void updateDisplay() {
 
 
-    private static boolean compare(Bitmap b1, Bitmap b2) {
-        if (b1.getWidth() == b2.getWidth() && b1.getHeight() == b2.getHeight()) {
-            int[] pixels1 = new int[b1.getWidth() * b1.getHeight()];
-            int[] pixels2 = new int[b2.getWidth() * b2.getHeight()];
-            b1.getPixels(pixels1, 0, b1.getWidth(), 0, 0, b1.getWidth(), b1.getHeight());
-            b2.getPixels(pixels2, 0, b2.getWidth(), 0, 0, b2.getWidth(), b2.getHeight());
-            if (Arrays.equals(pixels1, pixels2)) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
     }
 
-    private int topMatch() {
-        int max = 0;
-        int maxIndex = -1;
-
-        for (int i = 0; i < matchNums.length; i++) {
-            if (matchNums[i] > 0) {
-                max = matchNums[i];
-                maxIndex = i;
-
-
-            }
-        }
-        return maxIndex;
-    }
 
     private void goToSlide(View v, int to) {
 //        if (to > currentSlide) {
@@ -468,19 +426,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     }
 
-//    private int topMatch(Mat currentImage) {
-//        int max = 0;
-//        int maxIndex = -1;
-//
-//        for (int i = 0; i < screens.size(); i++) {
-//            int currentMatch = matches(screens.get(i), currentImage);
-//            if (currentMatch > max) {
-//                max = currentMatch;
-//                maxIndex = -1;
-//            }
-//        }
-//        return maxIndex;
-//    }
 
 
     public void matches(Mat img1) {
@@ -546,6 +491,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         matches = goodMatch;
         System.out.println("number of mat: " + goodMatch);
+        updateDisplay();
+
 //            Toast.makeText(getApplicationContext(), "camera is null", Toast.LENGTH_SHORT).show();
 
 
